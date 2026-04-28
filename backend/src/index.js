@@ -13,15 +13,8 @@ initFirebase();
 const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
   .split(',').map(s => s.trim());
 
-const corsOptions = {
-  origin: (origin, cb) => {
-    if (!origin || allowedOrigins.includes(origin)) cb(null, true);
-    else cb(new Error('Not allowed by CORS'));
-  },
-};
-
 const app = express();
-app.use(cors(corsOptions));
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
 app.use('/api/songs', songsRouter);
@@ -30,7 +23,7 @@ app.get('/health', (_, res) => res.json({ ok: true }));
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
-  cors: corsOptions,
+  cors: { origin: allowedOrigins },
 });
 
 io.on('connection', socket => {
