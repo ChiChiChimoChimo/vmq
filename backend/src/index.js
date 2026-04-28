@@ -10,11 +10,8 @@ const adminRouter = require('./routes/admin');
 
 initFirebase();
 
-const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
-  .split(',').map(s => s.trim());
-
 const app = express();
-app.use(cors({ origin: allowedOrigins }));
+app.use(cors({ origin: true }));
 app.use(express.json());
 
 app.use('/api/songs', songsRouter);
@@ -23,7 +20,7 @@ app.get('/health', (_, res) => res.json({ ok: true }));
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
-  cors: { origin: allowedOrigins },
+  cors: { origin: true },
 });
 
 io.on('connection', socket => {
