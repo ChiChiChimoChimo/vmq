@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Cualquiera puede leer canciones aprobadas
+    match /songs/{songId} {
+      allow read: if resource.data.status == 'approved';
+      // Solo el backend (Admin SDK) puede escribir — no se permiten escrituras directas del cliente
+      allow write: if false;
+    }
+  }
+}
