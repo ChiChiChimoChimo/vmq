@@ -1,23 +1,24 @@
 import { useState, useEffect, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
-import { getSocket } from '../hooks/useSocket';
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+
+function normalize(str) {
+  return str.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+}
 
 function matchesSearch(text, query) {
   return text.toLowerCase().includes(query.toLowerCase());
 }
 
-export default function GuessInput({ duration, onGuess, onSongGuess }) {
+export default function GuessInput({ duration, onGuess }) {
   const [songs, setSongs] = useState([]);
   const [gameInput, setGameInput] = useState('');
   const [songInput, setSongInput] = useState('');
-  const [gameLocked, setGameLocked] = useState(false);
-  const [songDone, setSongDone] = useState(false);
   const [songPhase, setSongPhase] = useState(false);
-  const [lockedGameTitle, setLockedGameTitle] = useState('');
   const [gameSuggestions, setGameSuggestions] = useState([]);
   const [songSuggestions, setSongSuggestions] = useState([]);
+  const [submitted, setSubmitted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(duration);
   const gameInputRef = useRef(null);
   const songInputRef = useRef(null);
@@ -30,16 +31,15 @@ export default function GuessInput({ duration, onGuess, onSongGuess }) {
       .catch(() => {});
   }, []);
 
+  // Reset on new round
   useEffect(() => {
     setTimeLeft(duration);
     setGameInput('');
     setSongInput('');
-    setGameLocked(false);
-    setSongDone(false);
     setSongPhase(false);
-    setLockedGameTitle('');
     setGameSuggestions([]);
     setSongSuggestions([]);
+    setSubmitted(false);
     gameInputRef.current?.focus();
 
     const interval = setInterval(() => {
@@ -53,42 +53,22 @@ export default function GuessInput({ duration, onGuess, onSongGuess }) {
 
   useEffect(() => {
     if (phase === 'roundEnd') {
-      setGameLocked(true);
-      setSongDone(true);
+      setSubmitted(true);
       setGameSuggestions([]);
       setSongSuggestions([]);
     }
   }, [phase]);
 
+  // Show song input when game input exactly matches a game with multiple songs
   useEffect(() => {
-    const socket = getSocket();
-
-    function onGameCorrect({ gameTitle }) {
-      setGameLocked(true);
-      setLockedGameTitle(gameTitle);
-      setGameSuggestions([]);
-
-      const gameSongs = songs.filter(s => s.gameTitle === gameTitle);
-      if (gameSongs.length > 1) {
-        setSongPhase(true);
-        setTimeout(() => songInputRef.current?.focus(), 50);
-      } else {
-        setSongDone(true);
-      }
-    }
-
-    function onSongCorrect() {
-      setSongDone(true);
-      setSongSuggestions([]);
-    }
-
-    socket.on('guess:game:correct', onGameCorrect);
-    socket.on('guess:song:correct', onSongCorrect);
-    return () => {
-      socket.off('guess:game:correct', onGameCorrect);
-      socket.off('guess:song:correct', onSongCorrect);
-    };
-  }, [songs]);
+    if (!gameInput.trim()) { setSongPhase(false); return; }
+    const key = normalize(gameInput);
+    const matches = songs.filter(s =>
+      normalize(s.gameTitle) === key ||
+      (s.aliases || []).some(a => normalize(a) === key)
+    );
+    setSongPhase(matches.length > 1);
+  }, [gameInput, songs]);
 
   function handleGameChange(e) {
     const val = e.target.value;
@@ -111,16 +91,17 @@ export default function GuessInput({ duration, onGuess, onSongGuess }) {
   function selectGame(gameTitle) {
     setGameInput(gameTitle);
     setGameSuggestions([]);
-    if (timeLeft > 0 && !gameLocked) {
-      onGuess(gameTitle);
+    // Check multi-song immediately so song input can appear before submit
+    const key = normalize(gameTitle);
+    const matches = songs.filter(s =>
+      normalize(s.gameTitle) === key ||
+      (s.aliases || []).some(a => normalize(a) === key)
+    );
+    const needsSong = matches.length > 1;
+    setSongPhase(needsSong);
+    if (needsSong) {
+      setTimeout(() => songInputRef.current?.focus(), 50);
     }
-  }
-
-  function handleGameSubmit(e) {
-    e.preventDefault();
-    if (!gameInput.trim() || timeLeft === 0 || gameLocked) return;
-    setGameSuggestions([]);
-    onGuess(gameInput.trim());
   }
 
   function handleSongChange(e) {
@@ -128,7 +109,11 @@ export default function GuessInput({ duration, onGuess, onSongGuess }) {
     setSongInput(val);
     if (!val.trim()) { setSongSuggestions([]); return; }
 
-    const gameSongs = songs.filter(s => s.gameTitle === lockedGameTitle);
+    const key = normalize(gameInput);
+    const gameSongs = songs.filter(s =>
+      normalize(s.gameTitle) === key ||
+      (s.aliases || []).some(a => normalize(a) === key)
+    );
     const matches = gameSongs
       .filter(s => matchesSearch(s.songTitle, val))
       .map(s => s.songTitle);
@@ -138,27 +123,27 @@ export default function GuessInput({ duration, onGuess, onSongGuess }) {
   function selectSong(songTitle) {
     setSongInput(songTitle);
     setSongSuggestions([]);
-    if (timeLeft > 0 && !songDone) {
-      onSongGuess(songTitle);
-    }
   }
 
-  function handleSongSubmit(e) {
+  function handleSubmit(e) {
     e.preventDefault();
-    if (!songInput.trim() || timeLeft === 0 || songDone) return;
+    if (!gameInput.trim() || submitted || timeLeft === 0) return;
+    setSubmitted(true);
+    setGameSuggestions([]);
     setSongSuggestions([]);
-    onSongGuess(songInput.trim());
+    onGuess({ game: gameInput.trim(), song: songInput.trim() || undefined });
   }
 
   const pct = (timeLeft / duration) * 100;
   const timerColor = pct > 50 ? '#4ade80' : pct > 25 ? '#facc15' : '#f87171';
+  const disabled = submitted || timeLeft === 0;
 
   return (
     <div className="guess-input-wrapper">
       <div className="timer-bar" style={{ width: `${pct}%`, background: timerColor }} />
       <span className="timer-label">{timeLeft}s</span>
 
-      <form onSubmit={handleGameSubmit} className="guess-form" autoComplete="off">
+      <form onSubmit={handleSubmit} autoComplete="off">
         <div className="autocomplete-wrapper">
           <input
             ref={gameInputRef}
@@ -166,9 +151,9 @@ export default function GuessInput({ duration, onGuess, onSongGuess }) {
             onChange={handleGameChange}
             onBlur={() => setTimeout(() => setGameSuggestions([]), 150)}
             placeholder="¿De qué juego es esta canción?"
-            disabled={gameLocked || timeLeft === 0}
+            disabled={disabled}
             autoComplete="off"
-            className={gameLocked ? 'input-correct' : ''}
+            className={submitted && gameInput ? 'input-submitted' : ''}
           />
           {gameSuggestions.length > 0 && (
             <ul className="autocomplete-dropdown">
@@ -178,23 +163,17 @@ export default function GuessInput({ duration, onGuess, onSongGuess }) {
             </ul>
           )}
         </div>
-        <button type="submit" disabled={gameLocked || timeLeft === 0 || !gameInput.trim()}>
-          {gameLocked ? '✓ Juego' : 'Adivinar'}
-        </button>
-      </form>
 
-      {songPhase && (
-        <form onSubmit={handleSongSubmit} className="guess-form" autoComplete="off">
-          <div className="autocomplete-wrapper">
+        {songPhase && (
+          <div className="autocomplete-wrapper song-input">
             <input
               ref={songInputRef}
               value={songInput}
               onChange={handleSongChange}
               onBlur={() => setTimeout(() => setSongSuggestions([]), 150)}
               placeholder="¿Cómo se llama la canción?"
-              disabled={songDone || timeLeft === 0}
+              disabled={disabled}
               autoComplete="off"
-              className={songDone ? 'input-correct' : ''}
             />
             {songSuggestions.length > 0 && (
               <ul className="autocomplete-dropdown">
@@ -204,11 +183,12 @@ export default function GuessInput({ duration, onGuess, onSongGuess }) {
               </ul>
             )}
           </div>
-          <button type="submit" disabled={songDone || timeLeft === 0 || !songInput.trim()}>
-            {songDone ? '✓ Canción' : 'Adivinar canción'}
-          </button>
-        </form>
-      )}
+        )}
+
+        <button type="submit" disabled={disabled || !gameInput.trim()}>
+          {submitted ? '✓ Enviado' : 'Adivinar'}
+        </button>
+      </form>
     </div>
   );
 }

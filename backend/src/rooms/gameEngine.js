@@ -36,30 +36,47 @@ async function fetchRandomSongs(count) {
 
 function startRound(io, room) {
   const song = room.songs[room.currentRound];
-  room.players.forEach(p => { p.hasGuessed = false; p.songGuessed = false; });
+  room.players.forEach(p => {
+    p.hasGuessed = false;
+    p.pendingGuess = null;
+    p.guessElapsed = null;
+  });
   room._roundStartedAt = Date.now();
-
-  const duration = room.settings.guessTime;
 
   io.to(room.code).emit('round:start', {
     roundNumber: room.currentRound + 1,
     total: room.songs.length,
     youtubeId: song.youtubeId,
-    duration,
+    duration: room.settings.guessTime,
   });
 
-  room.roundTimer = setTimeout(() => endRound(io, room), duration * 1000);
+  room.roundTimer = setTimeout(() => endRound(io, room), room.settings.guessTime * 1000);
 }
 
 function endRound(io, room) {
   if (room.roundTimer) { clearTimeout(room.roundTimer); room.roundTimer = null; }
 
   const song = room.songs[room.currentRound];
-  const scores = room.players.map(p => ({ nickname: p.nickname, score: p.score }));
+  const duration = room.settings.guessTime;
+
+  for (const player of room.players) {
+    const guess = player.pendingGuess;
+    if (!guess) continue;
+    const timeRemaining = Math.max(0, duration - (player.guessElapsed || duration));
+    if (isCorrectGame(guess.game, song)) {
+      player.score += calcScore(timeRemaining, duration);
+      if (guess.song && isCorrectSong(guess.song, song)) {
+        player.score += calcSongBonus(timeRemaining, duration);
+      }
+    }
+  }
+
+  const nextSong = room.songs[room.currentRound + 1] || null;
 
   io.to(room.code).emit('round:end', {
     answer: { gameTitle: song.gameTitle, songTitle: song.songTitle, youtubeId: song.youtubeId },
-    scores,
+    scores: room.players.map(p => ({ nickname: p.nickname, score: p.score })),
+    next: nextSong ? { youtubeId: nextSong.youtubeId, startTime: nextSong.startTime || 0 } : null,
   });
 
   room.currentRound++;
@@ -80,55 +97,13 @@ function endGame(io, room) {
   io.to(room.code).emit('game:end', { leaderboard });
 }
 
-function handleGameGuess(io, room, socketId, guess) {
+function handleGuess(io, room, socketId, { game, song }) {
   const player = room.players.find(p => p.socketId === socketId);
-  if (!player || player.hasGuessed || room.status !== 'playing') return false;
-
-  const song = room.songs[room.currentRound];
-  if (!isCorrectGame(guess, song)) return false;
+  if (!player || player.hasGuessed || room.status !== 'playing') return;
 
   player.hasGuessed = true;
-  const elapsed = (Date.now() - room._roundStartedAt) / 1000;
-  const timeRemaining = Math.max(0, room.settings.guessTime - elapsed);
-  player.score += calcScore(timeRemaining, room.settings.guessTime);
-
-  io.to(room.code).emit('guess:correct', {
-    nickname: player.nickname,
-    score: player.score,
-    scores: room.players.map(p => ({ nickname: p.nickname, score: p.score })),
-  });
-
-  io.to(socketId).emit('guess:game:correct', { gameTitle: song.gameTitle });
-
-  if (room.players.every(p => p.hasGuessed)) {
-    endRound(io, room);
-  }
-
-  return true;
+  player.pendingGuess = { game: game || '', song: song || '' };
+  player.guessElapsed = (Date.now() - room._roundStartedAt) / 1000;
 }
 
-function handleSongGuess(io, room, socketId, guess) {
-  const player = room.players.find(p => p.socketId === socketId);
-  if (!player || !player.hasGuessed || player.songGuessed || room.status !== 'playing') return false;
-
-  const song = room.songs[room.currentRound];
-  if (!isCorrectSong(guess, song)) return false;
-
-  player.songGuessed = true;
-  const elapsed = (Date.now() - room._roundStartedAt) / 1000;
-  const timeRemaining = Math.max(0, room.settings.guessTime - elapsed);
-  const bonus = calcSongBonus(timeRemaining, room.settings.guessTime);
-  player.score += bonus;
-
-  io.to(room.code).emit('guess:correct', {
-    nickname: player.nickname,
-    score: player.score,
-    scores: room.players.map(p => ({ nickname: p.nickname, score: p.score })),
-  });
-
-  io.to(socketId).emit('guess:song:correct', { songTitle: song.songTitle, bonus });
-
-  return true;
-}
-
-module.exports = { fetchRandomSongs, startRound, endRound, endGame, handleGameGuess, handleSongGuess };
+module.exports = { fetchRandomSongs, startRound, endRound, endGame, handleGuess };

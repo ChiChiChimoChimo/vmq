@@ -22,6 +22,56 @@ router.get('/songs', isAdmin, async (req, res) => {
   }
 });
 
+router.post('/songs', isAdmin, async (req, res) => {
+  try {
+    const { gameTitle, songTitle, youtubeId, composer, aliases, difficulty, startTime, status } = req.body;
+    if (!gameTitle || !songTitle || !youtubeId) {
+      return res.status(400).json({ error: 'gameTitle, songTitle y youtubeId son requeridos' });
+    }
+    const db = getDb();
+    const doc = await db.collection('songs').add({
+      gameTitle: gameTitle.trim(),
+      songTitle: songTitle.trim(),
+      youtubeId: youtubeId.trim(),
+      composer: composer?.trim() || '',
+      aliases: Array.isArray(aliases) ? aliases.map(a => a.trim()).filter(Boolean) : [],
+      difficulty: ['easy', 'medium', 'hard'].includes(difficulty) ? difficulty : 'medium',
+      startTime: Number(startTime) || 0,
+      status: ['approved', 'pending', 'rejected'].includes(status) ? status : 'approved',
+      submittedBy: 'admin',
+      submittedAt: new Date(),
+    });
+    res.status(201).json({ id: doc.id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put('/songs/:id', isAdmin, async (req, res) => {
+  try {
+    const { gameTitle, songTitle, youtubeId, composer, aliases, difficulty, startTime, status } = req.body;
+    if (!gameTitle || !songTitle || !youtubeId) {
+      return res.status(400).json({ error: 'gameTitle, songTitle y youtubeId son requeridos' });
+    }
+    const db = getDb();
+    const update = {
+      gameTitle: gameTitle.trim(),
+      songTitle: songTitle.trim(),
+      youtubeId: youtubeId.trim(),
+      composer: composer?.trim() || '',
+      aliases: Array.isArray(aliases) ? aliases.map(a => a.trim()).filter(Boolean) : [],
+      difficulty: ['easy', 'medium', 'hard'].includes(difficulty) ? difficulty : 'medium',
+      startTime: Number(startTime) || 0,
+      updatedAt: new Date(),
+    };
+    if (status) update.status = status;
+    await db.collection('songs').doc(req.params.id).update(update);
+    res.json({ message: 'Canción actualizada' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.patch('/songs/:id', isAdmin, async (req, res) => {
   try {
     const { status } = req.body;

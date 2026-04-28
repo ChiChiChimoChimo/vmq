@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useGameStore } from '../store/gameStore';
 import { useSocket } from '../hooks/useSocket';
 
@@ -80,7 +80,7 @@ export default function Home() {
         {error && <p className="error">{error}</p>}
       </div>
 
-      <a href="/contribute" className="contribute-link">¿Quieres agregar canciones? Contribuye aquí</a>
+      <Link to="/contribute" className="contribute-link">¿Quieres agregar canciones? Contribuye aquí</Link>
     </div>
   );
 }

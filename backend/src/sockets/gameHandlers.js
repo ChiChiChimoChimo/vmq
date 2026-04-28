@@ -1,5 +1,5 @@
 const rm = require('../rooms/roomManager');
-const { fetchRandomSongs, startRound, handleGameGuess, handleSongGuess } = require('../rooms/gameEngine');
+const { fetchRandomSongs, startRound, handleGuess } = require('../rooms/gameEngine');
 
 module.exports = function registerHandlers(io, socket) {
   socket.on('room:create', ({ nickname, settings } = {}) => {
@@ -50,16 +50,10 @@ module.exports = function registerHandlers(io, socket) {
     }
   });
 
-  socket.on('guess:submit', ({ guess } = {}) => {
+  socket.on('guess:submit', ({ game, song } = {}) => {
     const room = rm.getRoomBySocket(socket.id);
     if (!room || room.status !== 'playing') return;
-    handleGameGuess(io, room, socket.id, guess || '');
-  });
-
-  socket.on('guess:song', ({ guess } = {}) => {
-    const room = rm.getRoomBySocket(socket.id);
-    if (!room || room.status !== 'playing') return;
-    handleSongGuess(io, room, socket.id, guess || '');
+    handleGuess(io, room, socket.id, { game: game || '', song: song || '' });
   });
 
   socket.on('disconnect', () => {

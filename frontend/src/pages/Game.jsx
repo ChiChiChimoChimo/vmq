@@ -9,19 +9,15 @@ import Scoreboard from '../components/Scoreboard';
 export default function Game() {
   const { code } = useParams();
   const socket = useSocket();
-  const { round, roundResult, room, phase } = useGameStore();
+  const { round, roundResult, room, phase, nextSong } = useGameStore();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (phase === 'gameEnd') navigate(`/results/${code}`);
   }, [phase]);
 
-  function handleGuess(guess) {
-    socket.emit('guess:submit', { guess });
-  }
-
-  function handleSongGuess(guess) {
-    socket.emit('guess:song', { guess });
+  function handleGuess({ game, song }) {
+    socket.emit('guess:submit', { game, song });
   }
 
   if (!round && !roundResult) {
@@ -42,11 +38,16 @@ export default function Game() {
       </div>
 
       <div className="game-center">
-        {round && phase === 'playing' && (
-          <>
-            <YoutubePlayer youtubeId={round.youtubeId} autoPlay />
-            <GuessInput duration={round.duration} onGuess={handleGuess} onSongGuess={handleSongGuess} />
-          </>
+        {/* Player siempre montado para poder precargar la siguiente canción */}
+        <YoutubePlayer
+          youtubeId={phase === 'playing' ? round?.youtubeId : undefined}
+          startTime={round?.startTime || 0}
+          nextYoutubeId={phase === 'roundEnd' ? nextSong?.youtubeId : undefined}
+          nextStartTime={nextSong?.startTime || 0}
+        />
+
+        {phase === 'playing' && round && (
+          <GuessInput duration={round.duration} onGuess={handleGuess} />
         )}
 
         {phase === 'roundEnd' && roundResult && (
