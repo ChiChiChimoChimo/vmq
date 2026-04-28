@@ -31,9 +31,8 @@ export default function GuessInput({ duration, onGuess }) {
       .catch(() => {});
   }, []);
 
-  // Reset on new round
+  // Reset on new round — timer usa Date.now() para evitar drift de setInterval
   useEffect(() => {
-    setTimeLeft(duration);
     setGameInput('');
     setSongInput('');
     setSongPhase(false);
@@ -42,13 +41,19 @@ export default function GuessInput({ duration, onGuess }) {
     setSubmitted(false);
     gameInputRef.current?.focus();
 
-    const interval = setInterval(() => {
-      setTimeLeft(t => {
-        if (t <= 1) { clearInterval(interval); return 0; }
-        return t - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
+    const startedAt = Date.now();
+    let rafId;
+
+    function tick() {
+      const remaining = Math.max(0, duration - (Date.now() - startedAt) / 1000);
+      setTimeLeft(remaining);
+      if (remaining > 0) {
+        rafId = requestAnimationFrame(tick);
+      }
+    }
+
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
   }, [duration]);
 
   useEffect(() => {
@@ -136,12 +141,12 @@ export default function GuessInput({ duration, onGuess }) {
 
   const pct = (timeLeft / duration) * 100;
   const timerColor = pct > 50 ? '#4ade80' : pct > 25 ? '#facc15' : '#f87171';
-  const disabled = submitted || timeLeft === 0;
+  const disabled = submitted || timeLeft <= 0;
 
   return (
     <div className="guess-input-wrapper">
       <div className="timer-bar" style={{ width: `${pct}%`, background: timerColor }} />
-      <span className="timer-label">{timeLeft}s</span>
+      <span className="timer-label">{Math.ceil(timeLeft)}s</span>
 
       <form onSubmit={handleSubmit} autoComplete="off">
         <div className="autocomplete-wrapper">
@@ -188,6 +193,21 @@ export default function GuessInput({ duration, onGuess }) {
         <button type="submit" disabled={disabled || !gameInput.trim()}>
           {submitted ? '✓ Enviado' : 'Adivinar'}
         </button>
+        {submitted && timeLeft > 0 && (
+          <button
+            type="button"
+            className="btn-undo"
+            onClick={() => {
+              setSubmitted(false);
+              setGameInput('');
+              setSongInput('');
+              setSongPhase(false);
+              setTimeout(() => gameInputRef.current?.focus(), 0);
+            }}
+          >
+            ↩ Cambiar respuesta
+          </button>
+        )}
       </form>
     </div>
   );

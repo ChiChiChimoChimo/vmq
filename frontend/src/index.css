@@ -117,12 +117,14 @@ input[type=range] { -webkit-appearance: none; height: 4px; background: var(--acc
 
 /* --- GuessInput --- */
 .guess-input-wrapper { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 12px; }
-.timer-bar { height: 6px; border-radius: 3px; transition: width .9s linear, background .3s; }
+.timer-bar { height: 6px; border-radius: 3px; transition: background .3s; }
 .timer-label { font-size: .85rem; color: var(--text-muted); }
 .guess-input-wrapper form { display: flex; flex-direction: column; gap: 8px; }
 .guess-input-wrapper form > button { background: var(--accent); color: #fff; font-size: 1rem; padding: 12px; width: 100%; }
 .input-submitted { border-color: var(--accent) !important; opacity: .7; }
 .song-input { margin-top: 2px; }
+.btn-undo { background: transparent; color: var(--text-muted); font-size: .85rem; padding: 6px; border: 1px solid #334155; width: 100%; }
+.btn-undo:hover { color: var(--text); border-color: var(--text-muted); }
 
 .autocomplete-wrapper { position: relative; flex: 1; }
 .autocomplete-wrapper input { width: 100%; }

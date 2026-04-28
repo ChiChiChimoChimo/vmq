@@ -99,7 +99,7 @@ function endGame(io, room) {
 
 function handleGuess(io, room, socketId, { game, song }) {
   const player = room.players.find(p => p.socketId === socketId);
-  if (!player || player.hasGuessed || room.status !== 'playing') return;
+  if (!player || room.status !== 'playing') return;
 
   player.hasGuessed = true;
   player.pendingGuess = { game: game || '', song: song || '' };
