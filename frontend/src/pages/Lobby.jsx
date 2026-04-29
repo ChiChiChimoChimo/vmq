@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useGameStore } from '../store/gameStore';
 import { useSocket } from '../hooks/useSocket';
 import PlayerList from '../components/PlayerList';
+import ChatBox from '../components/ChatBox';
 
 export default function Lobby() {
   const { code } = useParams();
@@ -85,6 +86,8 @@ export default function Lobby() {
       )}
 
       {!isHost && <p className="waiting-msg">Esperando a que el host inicie la partida...</p>}
+
+      <ChatBox />
     </div>
   );
 }

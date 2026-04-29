@@ -47,7 +47,7 @@ function startRound(io, room) {
     roundNumber: room.currentRound + 1,
     total: room.songs.length,
     youtubeId: song.youtubeId,
-    startTime: song.startTime || 0,
+    startTime: Number(song.startTime) || 0,
     duration: room.settings.guessTime,
   });
 
@@ -97,7 +97,7 @@ function endRound(io, room) {
   io.to(room.code).emit('round:end', {
     answer: { gameTitle: song.gameTitle, songTitle: song.songTitle },
     results,
-    next: nextSong ? { youtubeId: nextSong.youtubeId, startTime: nextSong.startTime || 0 } : null,
+    next: nextSong ? { youtubeId: nextSong.youtubeId, startTime: Number(nextSong.startTime) || 0 } : null,
   });
 
   room.currentRound++;

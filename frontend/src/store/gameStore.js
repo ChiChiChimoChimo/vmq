@@ -10,9 +10,11 @@ export const useGameStore = create((set) => ({
   leaderboard: null,
   mySocketId: null,
   phase: 'home',
+  chatMessages: [],
 
   setNickname: (nickname) => set({ nickname }),
   setMySocketId: (id) => set({ mySocketId: id }),
+  addChatMessage: (msg) => set(s => ({ chatMessages: [...s.chatMessages.slice(-99), msg] })),
 
   joinRoom: (code, room) => set({ roomCode: code, room, phase: 'lobby' }),
   updateRoom: (room) => set({ room }),
@@ -38,5 +40,6 @@ export const useGameStore = create((set) => ({
   reset: () => set({
     roomCode: null, room: null, round: null,
     roundResult: null, nextSong: null, leaderboard: null, phase: 'home',
+    chatMessages: [],
   }),
 }));

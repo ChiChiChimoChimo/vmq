@@ -102,6 +102,8 @@ input[type=range] { -webkit-appearance: none; height: 4px; background: var(--acc
 
 /* --- Game --- */
 .game-page { display: flex; flex-direction: column; gap: 20px; }
+.game-layout { display: flex; gap: 20px; align-items: flex-start; }
+.game-main { flex: 1; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 .game-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; }
 .round-label { font-size: 1rem; color: var(--text-muted); padding: 6px 12px; background: var(--surface); border-radius: 8px; }
 .scoreboard { display: flex; flex-direction: column; gap: 4px; min-width: 180px; }
@@ -182,6 +184,44 @@ input[type=range] { -webkit-appearance: none; height: 4px; background: var(--acc
 .rank { font-size: 1.3rem; min-width: 36px; }
 .player-name { flex: 1; font-weight: 500; }
 .player-score { font-weight: 700; color: var(--accent); }
+
+/* --- ChatBox --- */
+.chatbox {
+  background: var(--surface);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  width: 260px;
+  flex-shrink: 0;
+  height: 420px;
+  border: 1px solid #1e293b;
+}
+.lobby-page .chatbox { width: 100%; height: 320px; }
+.chatbox-header {
+  padding: 10px 14px;
+  font-size: .8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  border-bottom: 1px solid #1e293b;
+}
+.chatbox-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.chatbox-empty { color: var(--text-muted); font-size: .8rem; text-align: center; margin-top: 8px; }
+.chatbox-msg { display: flex; flex-direction: column; gap: 1px; }
+.chatbox-nick { font-size: .72rem; color: var(--accent); font-weight: 600; }
+.chatbox-msg-me .chatbox-nick { color: var(--green); }
+.chatbox-text { font-size: .88rem; color: var(--text); word-break: break-word; }
+.chatbox-form { display: flex; gap: 6px; padding: 8px 10px; border-top: 1px solid #1e293b; }
+.chatbox-form input { flex: 1; font-size: .85rem; padding: 7px 10px; }
+.chatbox-send { font-size: .8rem; padding: 7px 12px; flex-shrink: 0; }
 
 /* --- Contribute --- */
 .contribute-page { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }

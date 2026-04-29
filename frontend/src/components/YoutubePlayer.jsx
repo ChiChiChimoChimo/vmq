@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 
-// Gestión global del API de YouTube para evitar cargas duplicadas
 let ytReady = false;
 const ytQueue = new Set();
 
@@ -30,8 +29,10 @@ export default function YoutubePlayer({ youtubeId, startTime = 0, nextYoutubeId,
   const playerRef = useRef(null);
   const readyRef = useRef(false);
   const pendingRef = useRef(null);
+  // Tracks the startTime we expect after calling loadVideoById,
+  // so we can correct the position once the video actually starts playing.
+  const seekOnPlayRef = useRef(null);
 
-  // Crear el player una sola vez
   useEffect(() => {
     const cleanup = whenYTReady(() => {
       if (!containerRef.current) return;
@@ -41,8 +42,22 @@ export default function YoutubePlayer({ youtubeId, startTime = 0, nextYoutubeId,
           onReady: () => {
             readyRef.current = true;
             if (pendingRef.current) {
+              const { videoId, startSeconds } = pendingRef.current;
+              seekOnPlayRef.current = startSeconds;
               playerRef.current.loadVideoById(pendingRef.current);
               pendingRef.current = null;
+            }
+          },
+          onStateChange: (e) => {
+            // Belt-and-suspenders: if loadVideoById ignored startSeconds,
+            // force-seek to the correct position the moment playback begins.
+            if (e.data === window.YT.PlayerState.PLAYING && seekOnPlayRef.current !== null) {
+              const expected = seekOnPlayRef.current;
+              seekOnPlayRef.current = null;
+              const actual = playerRef.current?.getCurrentTime?.() ?? 0;
+              if (Math.abs(actual - expected) > 1.5) {
+                playerRef.current.seekTo(expected, true);
+              }
             }
           },
         },
@@ -53,24 +68,35 @@ export default function YoutubePlayer({ youtubeId, startTime = 0, nextYoutubeId,
       playerRef.current?.destroy?.();
       playerRef.current = null;
       readyRef.current = false;
+      seekOnPlayRef.current = null;
     };
   }, []);
 
   // Cargar y reproducir canción actual
   useEffect(() => {
     if (!youtubeId) return;
-    const args = { videoId: youtubeId, startSeconds: startTime };
+    const seconds = Number(startTime) || 0;
+    const args = { videoId: youtubeId, startSeconds: seconds };
     if (readyRef.current && playerRef.current) {
+      seekOnPlayRef.current = seconds;
       playerRef.current.loadVideoById(args);
     } else {
       pendingRef.current = args;
     }
   }, [youtubeId, startTime]);
 
-  // Precargar siguiente canción en silencio durante la pausa entre rondas
+  // Precargar siguiente canción en silencio durante la pausa entre rondas.
+  // Se retrasa para no cortar el audio de la ronda actual.
   useEffect(() => {
-    if (!nextYoutubeId || !readyRef.current || !playerRef.current) return;
-    playerRef.current.cueVideoById({ videoId: nextYoutubeId, startSeconds: nextStartTime });
+    if (!nextYoutubeId) return;
+    const timer = setTimeout(() => {
+      if (!readyRef.current || !playerRef.current) return;
+      playerRef.current.cueVideoById({
+        videoId: nextYoutubeId,
+        startSeconds: Number(nextStartTime) || 0,
+      });
+    }, 2000);
+    return () => clearTimeout(timer);
   }, [nextYoutubeId, nextStartTime]);
 
   return (

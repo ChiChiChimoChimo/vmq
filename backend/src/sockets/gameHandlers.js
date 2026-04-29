@@ -56,6 +56,14 @@ module.exports = function registerHandlers(io, socket) {
     handleGuess(io, room, socket.id, { game: game || '', song: song || '' });
   });
 
+  socket.on('chat:message', ({ text } = {}) => {
+    const room = rm.getRoomBySocket(socket.id);
+    if (!room || !text?.trim()) return;
+    const player = room.players.find(p => p.socketId === socket.id);
+    if (!player) return;
+    io.to(room.code).emit('chat:message', { nickname: player.nickname, text: text.trim().slice(0, 200) });
+  });
+
   socket.on('disconnect', () => {
     const room = rm.getRoomBySocket(socket.id);
     if (!room) return;

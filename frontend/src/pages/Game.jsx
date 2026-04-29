@@ -5,6 +5,7 @@ import { useSocket } from '../hooks/useSocket';
 import YoutubePlayer from '../components/YoutubePlayer';
 import GuessInput from '../components/GuessInput';
 import Scoreboard from '../components/Scoreboard';
+import ChatBox from '../components/ChatBox';
 
 export default function Game() {
   const { code } = useParams();
@@ -32,6 +33,8 @@ export default function Game() {
 
   return (
     <div className="game-page">
+      <div className="game-layout">
+      <div className="game-main">
       <div className="game-header">
         <span className="round-label">
           Ronda {round?.roundNumber ?? roundResult?.roundNumber} / {round?.total ?? room?.totalRounds}
@@ -78,6 +81,9 @@ export default function Game() {
             <p className="next-round-msg">Siguiente ronda en 5 segundos...</p>
           </div>
         )}
+      </div>
+      </div>
+      <ChatBox />
       </div>
     </div>
   );
