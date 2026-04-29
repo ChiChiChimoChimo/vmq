@@ -104,6 +104,10 @@ input[type=range] { -webkit-appearance: none; height: 4px; background: var(--acc
 .game-page { display: flex; flex-direction: column; gap: 20px; }
 .game-layout { display: flex; gap: 20px; align-items: flex-start; }
 .game-main { flex: 1; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+
+@media (max-width: 640px) {
+  .game-layout { flex-direction: column; }
+}
 .game-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; }
 .round-label { font-size: 1rem; color: var(--text-muted); padding: 6px 12px; background: var(--surface); border-radius: 8px; }
 .scoreboard { display: flex; flex-direction: column; gap: 4px; min-width: 180px; }
@@ -193,18 +197,40 @@ input[type=range] { -webkit-appearance: none; height: 4px; background: var(--acc
   flex-direction: column;
   width: 260px;
   flex-shrink: 0;
-  height: 420px;
   border: 1px solid #1e293b;
 }
-.lobby-page .chatbox { width: 100%; height: 320px; }
+.chatbox-open { height: 420px; }
+.lobby-page .chatbox { width: 100%; }
+.lobby-page .chatbox.chatbox-open { height: 320px; }
+
 .chatbox-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 10px 14px;
   font-size: .8rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 1px;
   color: var(--text-muted);
-  border-bottom: 1px solid #1e293b;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  border-radius: var(--radius);
+  border-bottom: none;
+}
+.chatbox-open .chatbox-header { border-radius: var(--radius) var(--radius) 0 0; border-bottom: 1px solid #1e293b; }
+.chatbox-toggle-icons { display: flex; align-items: center; gap: 6px; }
+.chatbox-chevron { font-size: .7rem; }
+.chatbox-badge {
+  background: var(--accent);
+  color: #fff;
+  font-size: .65rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 1px 6px;
+  min-width: 18px;
+  text-align: center;
 }
 .chatbox-messages {
   flex: 1;
@@ -213,15 +239,21 @@ input[type=range] { -webkit-appearance: none; height: 4px; background: var(--acc
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-height: 0;
 }
 .chatbox-empty { color: var(--text-muted); font-size: .8rem; text-align: center; margin-top: 8px; }
 .chatbox-msg { display: flex; flex-direction: column; gap: 1px; }
 .chatbox-nick { font-size: .72rem; color: var(--accent); font-weight: 600; }
 .chatbox-msg-me .chatbox-nick { color: var(--green); }
 .chatbox-text { font-size: .88rem; color: var(--text); word-break: break-word; }
-.chatbox-form { display: flex; gap: 6px; padding: 8px 10px; border-top: 1px solid #1e293b; }
+.chatbox-form { display: flex; gap: 6px; padding: 8px 10px; border-top: 1px solid #1e293b; flex-shrink: 0; }
 .chatbox-form input { flex: 1; font-size: .85rem; padding: 7px 10px; }
 .chatbox-send { font-size: .8rem; padding: 7px 12px; flex-shrink: 0; }
+
+@media (max-width: 640px) {
+  .chatbox { width: 100%; }
+  .chatbox-open { height: 280px; }
+}
 
 /* --- Contribute --- */
 .contribute-page { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
