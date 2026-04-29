@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useGameStore } from '../store/gameStore';
 import { useSocket } from '../hooks/useSocket';
@@ -12,6 +12,13 @@ export default function Game() {
   const socket = useSocket();
   const { round, roundResult, room, phase, nextSong, nickname } = useGameStore();
   const navigate = useNavigate();
+  const [volume, setVolume] = useState(() => Number(localStorage.getItem('vmq-volume') ?? 80));
+
+  function handleVolume(e) {
+    const v = Number(e.target.value);
+    setVolume(v);
+    localStorage.setItem('vmq-volume', v);
+  }
 
   useEffect(() => {
     if (phase === 'gameEnd') navigate(`/results/${code}`);
@@ -48,7 +55,22 @@ export default function Game() {
           startTime={round?.startTime || 0}
           nextYoutubeId={phase === 'roundEnd' ? nextSong?.youtubeId : undefined}
           nextStartTime={nextSong?.startTime || 0}
+          volume={volume}
         />
+
+        <div className="volume-control">
+          <span className="volume-icon">{volume === 0 ? '🔇' : volume < 40 ? '🔉' : '🔊'}</span>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={volume}
+            onChange={handleVolume}
+            className="volume-slider"
+            aria-label="Volumen"
+          />
+          <span className="volume-value">{volume}</span>
+        </div>
 
         {phase === 'playing' && round && (
           <GuessInput duration={round.duration} onGuess={handleGuess} />

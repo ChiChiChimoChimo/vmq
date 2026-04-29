@@ -24,7 +24,7 @@ function whenYTReady(cb) {
   return () => ytQueue.delete(cb);
 }
 
-export default function YoutubePlayer({ youtubeId, startTime = 0, nextYoutubeId, nextStartTime = 0 }) {
+export default function YoutubePlayer({ youtubeId, startTime = 0, nextYoutubeId, nextStartTime = 0, volume = 80 }) {
   const containerRef = useRef(null);
   const playerRef = useRef(null);
   const readyRef = useRef(false);
@@ -41,6 +41,7 @@ export default function YoutubePlayer({ youtubeId, startTime = 0, nextYoutubeId,
         events: {
           onReady: () => {
             readyRef.current = true;
+            playerRef.current.setVolume(volume);
             if (pendingRef.current) {
               const { videoId, startSeconds } = pendingRef.current;
               seekOnPlayRef.current = startSeconds;
@@ -84,6 +85,13 @@ export default function YoutubePlayer({ youtubeId, startTime = 0, nextYoutubeId,
       pendingRef.current = args;
     }
   }, [youtubeId, startTime]);
+
+  // Aplicar volumen cuando cambia
+  useEffect(() => {
+    if (readyRef.current && playerRef.current) {
+      playerRef.current.setVolume(volume);
+    }
+  }, [volume]);
 
   // Precargar siguiente canción en silencio durante la pausa entre rondas.
   // Se retrasa para no cortar el audio de la ronda actual.

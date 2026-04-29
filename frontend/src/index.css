@@ -122,6 +122,18 @@ input[type=range] { -webkit-appearance: none; height: 4px; background: var(--acc
 /* YouTube iframe oculto */
 .yt-player-wrapper { width: 0; height: 0; overflow: hidden; position: absolute; }
 
+/* --- Volume control --- */
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 260px;
+}
+.volume-icon { font-size: 1rem; user-select: none; }
+.volume-slider { flex: 1; }
+.volume-value { font-size: .8rem; color: var(--text-muted); min-width: 24px; text-align: right; }
+
 /* --- GuessInput --- */
 .guess-input-wrapper { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 12px; }
 .timer-bar { height: 6px; border-radius: 3px; transition: background .3s; }
