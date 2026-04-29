@@ -3,6 +3,16 @@ const { getDb } = require('../firebase-admin');
 
 const router = Router();
 
+router.get('/count', async (req, res) => {
+  try {
+    const db = getDb();
+    const snap = await db.collection('songs').where('status', '==', 'approved').get();
+    res.json({ count: snap.size });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/', async (req, res) => {
   try {
     const db = getDb();

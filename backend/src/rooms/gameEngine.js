@@ -47,6 +47,7 @@ function startRound(io, room) {
     roundNumber: room.currentRound + 1,
     total: room.songs.length,
     youtubeId: song.youtubeId,
+    startTime: song.startTime || 0,
     duration: room.settings.guessTime,
   });
 
@@ -59,23 +60,43 @@ function endRound(io, room) {
   const song = room.songs[room.currentRound];
   const duration = room.settings.guessTime;
 
-  for (const player of room.players) {
+  const results = room.players.map(player => {
     const guess = player.pendingGuess;
-    if (!guess) continue;
-    const timeRemaining = Math.max(0, duration - (player.guessElapsed || duration));
-    if (isCorrectGame(guess.game, song)) {
-      player.score += calcScore(timeRemaining, duration);
-      if (guess.song && isCorrectSong(guess.song, song)) {
-        player.score += calcSongBonus(timeRemaining, duration);
+    let gameCorrect = false;
+    let songCorrect = false;
+    let roundScore = 0;
+
+    if (guess && guess.game) {
+      const timeRemaining = Math.max(0, duration - (player.guessElapsed || duration));
+      gameCorrect = isCorrectGame(guess.game, song);
+      if (gameCorrect) {
+        roundScore += calcScore(timeRemaining, duration);
+        if (guess.song && isCorrectSong(guess.song, song)) {
+          songCorrect = true;
+          roundScore += calcSongBonus(timeRemaining, duration);
+        }
+        player.correctCount = (player.correctCount || 0) + 1;
       }
     }
-  }
+
+    player.score += roundScore;
+
+    return {
+      nickname: player.nickname,
+      score: player.score,
+      correctCount: player.correctCount || 0,
+      correct: gameCorrect,
+      songCorrect,
+      roundScore,
+      guess: guess ? { game: guess.game || '', song: guess.song || '' } : null,
+    };
+  });
 
   const nextSong = room.songs[room.currentRound + 1] || null;
 
   io.to(room.code).emit('round:end', {
-    answer: { gameTitle: song.gameTitle, songTitle: song.songTitle, youtubeId: song.youtubeId },
-    scores: room.players.map(p => ({ nickname: p.nickname, score: p.score })),
+    answer: { gameTitle: song.gameTitle, songTitle: song.songTitle },
+    results,
     next: nextSong ? { youtubeId: nextSong.youtubeId, startTime: nextSong.startTime || 0 } : null,
   });
 
@@ -92,7 +113,7 @@ function endGame(io, room) {
   room.status = 'finished';
   const leaderboard = [...room.players]
     .sort((a, b) => b.score - a.score)
-    .map((p, i) => ({ rank: i + 1, nickname: p.nickname, score: p.score }));
+    .map((p, i) => ({ rank: i + 1, nickname: p.nickname, score: p.score, correctCount: p.correctCount || 0 }));
 
   io.to(room.code).emit('game:end', { leaderboard });
 }

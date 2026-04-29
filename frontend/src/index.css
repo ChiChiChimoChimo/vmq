@@ -108,8 +108,9 @@ input[type=range] { -webkit-appearance: none; height: 4px; background: var(--acc
 .score-row { display: flex; gap: 8px; align-items: center; font-size: .9rem; padding: 4px 8px; border-radius: 6px; }
 .score-row.me { background: var(--surface); }
 .score-name { flex: 1; }
+.score-correct-count { font-size: .8rem; color: var(--green); min-width: 28px; text-align: right; }
 .score-pts { font-weight: 700; color: var(--accent); min-width: 48px; text-align: right; }
-.score-check { color: var(--green); }
+.score-check { color: var(--yellow); font-size: .6rem; }
 .game-center { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 24px; padding-top: 20px; }
 
 /* YouTube iframe oculto */
@@ -153,10 +154,24 @@ input[type=range] { -webkit-appearance: none; height: 4px; background: var(--acc
 .autocomplete-dropdown li:hover { background: var(--accent); color: #fff; }
 
 /* --- Round result --- */
-.round-result { text-align: center; display: flex; flex-direction: column; gap: 12px; }
-.answer-title { font-size: 2rem; font-weight: 700; color: var(--green); }
-.answer-song { font-size: 1.1rem; color: var(--text-muted); }
+.round-result { display: flex; flex-direction: column; align-items: center; gap: 16px; width: 100%; max-width: 600px; }
+.answer-title { font-size: 2rem; font-weight: 700; text-align: center; }
+.answer-correct { color: var(--green); }
+.answer-wrong { color: var(--red); }
+.answer-song { font-size: 1.1rem; color: var(--text-muted); text-align: center; }
 .next-round-msg { color: var(--text-muted); font-size: .9rem; }
+
+.player-results { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+.player-result-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; font-size: .9rem; background: var(--surface); border-left: 3px solid transparent; }
+.player-result-row.result-correct { border-left-color: var(--green); }
+.player-result-row.result-wrong { border-left-color: var(--red); }
+.result-nick { font-weight: 600; min-width: 80px; }
+.result-guess { flex: 1; color: var(--text-muted); }
+.result-guess em { color: var(--text-muted); font-style: italic; }
+.no-guess { opacity: .5; }
+.result-score { font-weight: 700; color: var(--accent); min-width: 60px; text-align: right; }
+
+.song-select { width: 100%; }
 
 /* --- Results --- */
 .results-page { display: flex; flex-direction: column; align-items: center; gap: 32px; padding-top: 40px; }

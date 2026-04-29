@@ -9,8 +9,9 @@ export default function Scoreboard({ players }) {
       {sorted.map(p => (
         <div key={p.socketId} className={`score-row ${p.nickname === myNickname ? 'me' : ''}`}>
           <span className="score-name">{p.nickname}</span>
+          <span className="score-correct-count">{p.correctCount ?? 0}✓</span>
           <span className="score-pts">{p.score}</span>
-          {p.hasGuessed && <span className="score-check">✓</span>}
+          {p.hasGuessed && <span className="score-check">●</span>}
         </div>
       ))}
     </div>

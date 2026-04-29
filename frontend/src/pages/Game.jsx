@@ -9,7 +9,7 @@ import Scoreboard from '../components/Scoreboard';
 export default function Game() {
   const { code } = useParams();
   const socket = useSocket();
-  const { round, roundResult, room, phase, nextSong } = useGameStore();
+  const { round, roundResult, room, phase, nextSong, nickname } = useGameStore();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,6 +28,8 @@ export default function Game() {
     );
   }
 
+  const myResult = roundResult?.results?.find(r => r.nickname === nickname);
+
   return (
     <div className="game-page">
       <div className="game-header">
@@ -38,7 +40,6 @@ export default function Game() {
       </div>
 
       <div className="game-center">
-        {/* Player siempre montado para poder precargar la siguiente canción */}
         <YoutubePlayer
           youtubeId={phase === 'playing' ? round?.youtubeId : undefined}
           startTime={round?.startTime || 0}
@@ -52,9 +53,28 @@ export default function Game() {
 
         {phase === 'roundEnd' && roundResult && (
           <div className="round-result">
-            <h2>Respuesta:</h2>
-            <p className="answer-title">{roundResult.answer.gameTitle}</p>
+            <p className={`answer-title ${myResult?.correct ? 'answer-correct' : 'answer-wrong'}`}>
+              {roundResult.answer.gameTitle}
+            </p>
             <p className="answer-song">"{roundResult.answer.songTitle}"</p>
+
+            <div className="player-results">
+              {roundResult.results?.map(r => (
+                <div key={r.nickname} className={`player-result-row ${r.correct ? 'result-correct' : 'result-wrong'}`}>
+                  <span className="result-nick">{r.nickname}</span>
+                  <span className="result-guess">
+                    {r.guess?.game
+                      ? <>{r.guess.game}{r.guess.song ? <em> · {r.guess.song}</em> : null}</>
+                      : <em className="no-guess">Sin respuesta</em>
+                    }
+                  </span>
+                  <span className="result-score">
+                    {r.roundScore > 0 ? `+${r.roundScore}` : '—'}
+                  </span>
+                </div>
+              ))}
+            </div>
+
             <p className="next-round-msg">Siguiente ronda en 5 segundos...</p>
           </div>
         )}
